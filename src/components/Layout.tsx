@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
@@ -10,9 +10,11 @@ import {
   Bell,
   Search,
   Menu,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
 import { cn } from '../utils/cn';
+import { useAuth } from '../context/AuthContext';
 
 interface SidebarItemProps {
   icon: React.ElementType;
@@ -39,6 +41,13 @@ const SidebarItem = ({ icon: Icon, label, href, active }: SidebarItemProps) => (
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
   const location = useLocation();
+  const { logout, user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
@@ -58,7 +67,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           !isSidebarOpen && "-translate-x-full"
         )}
       >
-        <div className="p-6">
+        <div className="flex flex-col h-full p-6">
           <div className="flex items-center gap-2 mb-8">
             <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
               <ShoppingBag className="text-white" size={20} />
@@ -66,7 +75,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <h1 className="text-xl font-bold tracking-tight">E-CRM</h1>
           </div>
           
-          <nav className="space-y-1">
+          <nav className="flex-1 space-y-1">
             {menuItems.map((item) => (
               <SidebarItem 
                 key={item.href} 
@@ -75,19 +84,26 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               />
             ))}
           </nav>
-        </div>
 
-        <div className="absolute bottom-0 w-full p-6 border-t border-slate-800">
-          <div className="flex items-center gap-3">
-            <img 
-              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=32&h=32&fit=crop" 
-              alt="Admin" 
-              className="w-8 h-8 rounded-full"
-            />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">Alex Admin</p>
-              <p className="text-xs text-slate-400 truncate">alex@ecrm.com</p>
+          <div className="pt-6 border-t border-slate-800 space-y-4">
+            <div className="flex items-center gap-3">
+              <img 
+                src={user?.avatar} 
+                alt="User" 
+                className="w-8 h-8 rounded-full"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{user?.name}</p>
+                <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+              </div>
             </div>
+            <button 
+              onClick={handleLogout}
+              className="flex items-center gap-3 px-4 py-2 w-full text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors text-sm font-medium"
+            >
+              <LogOut size={18} />
+              Sign Out
+            </button>
           </div>
         </div>
       </aside>

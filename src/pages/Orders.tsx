@@ -1,15 +1,40 @@
+import React, { useState } from 'react';
 import { 
   Search, 
   Filter, 
   Download,
   Eye,
   Trash2,
-  Package
+  Package,
+  X
 } from 'lucide-react';
-import { mockOrders } from '../data/mock';
+import { useData } from '../context/DataContext';
 import { cn } from '../utils/cn';
 
 export const Orders = () => {
+  const { orders, addOrder, customers } = useData();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    customerId: '',
+    status: 'pending' as const,
+    total: '',
+    items: ''
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const customer = customers.find(c => c.id === formData.customerId);
+    addOrder({
+      customerId: formData.customerId,
+      customerName: customer?.name || 'Unknown Customer',
+      status: formData.status,
+      total: parseFloat(formData.total),
+      items: parseInt(formData.items)
+    });
+    setIsModalOpen(false);
+    setFormData({ customerId: '', status: 'pending', total: '', items: '' });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -22,12 +47,83 @@ export const Orders = () => {
             <Download size={18} />
             Export Orders
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+          >
             <Package size={18} />
             Create Order
           </button>
         </div>
       </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-900">Create New Order</h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-600">
+                <X size={20} />
+              </button>
+            </div>
+            <form className="p-6 space-y-4" onSubmit={handleSubmit}>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Customer</label>
+                <select 
+                  required
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  value={formData.customerId}
+                  onChange={e => setFormData({...formData, customerId: e.target.value})}
+                >
+                  <option value="">Select Customer</option>
+                  {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Total Amount ($)</label>
+                  <input 
+                    required
+                    type="number" step="0.01"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 text-sm" 
+                    placeholder="0.00"
+                    value={formData.total}
+                    onChange={e => setFormData({...formData, total: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Items Count</label>
+                  <input 
+                    required
+                    type="number"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 text-sm" 
+                    placeholder="1"
+                    value={formData.items}
+                    onChange={e => setFormData({...formData, items: e.target.value})}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                <select 
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  value={formData.status}
+                  onChange={e => setFormData({...formData, status: e.target.value as any})}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="shipped">Shipped</option>
+                  <option value="delivered">Delivered</option>
+                </select>
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-4 py-2 border border-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">Cancel</button>
+                <button type="submit" className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors">Create Order</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-4 border-b border-slate-200 bg-slate-50/50 flex flex-wrap gap-4 items-center justify-between">
@@ -68,7 +164,7 @@ export const Orders = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {mockOrders.map((order) => (
+              {orders.map((order) => (
                 <tr key={order.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4 font-bold text-slate-900">{order.id}</td>
                   <td className="px-6 py-4 text-slate-700 font-medium">{order.customerName}</td>
